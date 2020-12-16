@@ -16,7 +16,7 @@ struct Rule {
 
 bool operator<(const Rule& first, const Rule& second) {
     return first.nonterminal_from < second.nonterminal_from || (first.nonterminal_from == second.nonterminal_from &&
-            first.to < second.to);
+                                                                first.to < second.to);
 }
 
 
@@ -27,7 +27,7 @@ bool operator==(const Rule& first, const Rule& second) {
 
 struct Situation {
     Situation(Rule  rule, int point_index, int begin_symb_numb) :
-                rule(std::move(rule)), point_index(point_index), begin_symb_numb(begin_symb_numb) {}
+            rule(std::move(rule)), point_index(point_index), begin_symb_numb(begin_symb_numb) {}
 
     Rule rule;
     int point_index;
@@ -37,7 +37,7 @@ struct Situation {
 
 bool operator<(const Situation& first, const Situation& second) {
     return first.rule < second.rule || (first.rule == second.rule && first.point_index < second.point_index ||
-            (first.point_index == second.point_index && first.begin_symb_numb < second.begin_symb_numb));
+                                        (first.point_index == second.point_index && first.begin_symb_numb < second.begin_symb_numb));
 }
 
 
@@ -55,22 +55,26 @@ public:
     }
 
     bool predict(std::string& word) {
-        processing_word = word;
         D.resize(word.size() + 1);
         D[0].insert(Situation(Rule('\0', "S"), 0, 0));
-        int has_change = 1;
-        while (has_change) {
-            has_change = Predict(0) || Complete(0);
-        }
-        for (int j = 1; j <= word.size(); ++j) {
-            Scan(j - 1);
-            has_change = 1;
-            while (has_change != 0) {
-                has_change = D[j].size();
-                bool has_change1 = Predict(j);
-                bool has_change2 = Complete(j);
-                has_change -= D[j].size();
+        do {
+            int size_before = D[0].size();
+            Predict(0);
+            Complete(0);
+            if (size_before == D[0].size()) {
+                break;
             }
+        } while (true);
+        for (int j = 1; j <= word.size(); ++j) {
+            Scan(j - 1, word[j - 1]);
+            do {
+                int size_before = D[j].size();
+                Predict(j);
+                Complete(j);
+                if (size_before == D[j].size()) {
+                    break;
+                }
+            } while (true);
         }
         return D[word.size()].find(Situation(Rule('\0', "S"), 1, 0)) != D[word.size()].end();
     }
@@ -98,8 +102,7 @@ public:
         std::cout << "[OK]\n";
 
         std::cout << "Scan testing\n";
-        algo.processing_word = "aaaa";
-        algo.Scan(1);
+        algo.Scan(1, 'a');
         correct.clear();
         correct.insert(Situation(Rule('S', "aT"), 1, 1));
         assert(algo.D[2] == correct);
@@ -133,10 +136,10 @@ private:
         return !new_situations.empty();
     }
 
-    bool Scan(int D_index) {
+    bool Scan(int D_index, char symbol) {
         std::set<Situation> new_situations;
         for (Situation situation : D[D_index]) {
-            if (processing_word[D_index] == situation.rule.to[situation.point_index]) {
+            if (symbol == situation.rule.to[situation.point_index]) {
                 Situation new_situation = Situation(situation.rule, situation.point_index + 1, situation.begin_symb_numb);
                 if (D[D_index + 1].find(new_situation) == D[D_index + 1].end()) {
                     new_situations.insert(new_situation);
@@ -171,7 +174,6 @@ private:
     }
 
     std::vector<std::set<Situation>> D;
-    std::string processing_word;
     std::set<Rule> grammar;
 };
 
