@@ -2,7 +2,6 @@
 #include <utility>
 #include <vector>
 #include <set>
-#include <cassert>
 
 
 struct Rule {
@@ -78,45 +77,6 @@ public:
         }
         return D[word.size()].find(Situation(Rule('\0', "S"), 1, 0)) != D[word.size()].end();
     }
-
-    static void run_tests() {
-        Algo algo;
-
-        std::cout << "Predict testing\n";
-        algo.D.resize(4);
-        algo.grammar.insert(Rule('S', "S"));
-        algo.grammar.insert(Rule('S', "aT"));
-        algo.grammar.insert(Rule('T', "b"));
-        algo.D[1].insert(Situation(Rule('S', "aT"), 1, 0));
-        algo.D[1].insert(Situation(Rule('T', "b"), 0, 0));
-        algo.D[1].insert(Situation(Rule('S', "S"), 0, 0));
-        algo.Predict(1);
-        std::set<Situation> correct;
-        correct.insert(Situation(Rule('S', "aT"), 1, 0));
-        correct.insert(Situation(Rule('T', "b"), 0, 0));
-        correct.insert(Situation(Rule('S', "S"), 0, 0));
-        correct.insert(Situation(Rule('S', "aT"), 0, 1));
-        correct.insert(Situation(Rule('T', "b"), 0, 1));
-        correct.insert(Situation(Rule('S', "S"), 0, 1));
-        assert(algo.D[1] == correct);
-        std::cout << "[OK]\n";
-
-        std::cout << "Scan testing\n";
-        algo.Scan(1, 'a');
-        correct.clear();
-        correct.insert(Situation(Rule('S', "aT"), 1, 1));
-        assert(algo.D[2] == correct);
-        std::cout << "[OK]\n";
-
-        std::cout << "Complete testing\n";
-        algo.D[3].insert(Situation(Rule('T', "b"), 1, 1));
-        algo.Complete(3);
-        correct.clear();
-        correct.insert(Situation(Rule('T', "b"), 1, 1));
-        correct.insert(Situation(Rule('S', "aT"), 2, 0));
-        assert(algo.D[3] == correct);
-        std::cout << "[OK]\n";
-    }
 private:
     bool Predict(int D_index) {
         std::set<Situation> new_situations;
@@ -188,12 +148,6 @@ std::string get_to(std::string rule_string) {
 
 
 int main() {
-    std::string mode;
-    std::cin >> mode;
-    if (mode == "run_tests") {
-        Algo::run_tests();
-        return 0;
-    }
     int rule_numb_in_grammar;
     std::cin >> rule_numb_in_grammar;
     std::set<Rule> grammar;
